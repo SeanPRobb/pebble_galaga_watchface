@@ -1,6 +1,11 @@
 {
     "media": [
         {
+            "defName": "IMAGE_MENU_ICON",
+            "type": "png",
+            "file": "images/menu_icon_space_invader.png"
+        },
+        {
             "defName": "IMAGE_SHIP_12",
             "type": "png",
             "file": "images/ship12.png"
