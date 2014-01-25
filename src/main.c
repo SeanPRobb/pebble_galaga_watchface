@@ -52,9 +52,13 @@ void load_ship_image(int digit_value) {
 
   // TODO: Signal these error(s)?
 
-  bmp_init_container(IMAGE_RESOURCE_IDS[digit_value], &hourContainer);
-  hourContainer.layer.layer.frame.origin.x =  1*72;
-  hourContainer.layer.layer.frame.origin.y = 1*84;
+  Layer *window_layer = window_get_root_layer(&window);
+  GRect bounds = layer_get_bounds(window_layer);
+  const GPoint center = grect_center_point(&bounds);
+	
+  bmp_init_container(IMAGE_RESOURCE_IDS[digit_value-1], &hourContainer);
+  hourContainer.layer.layer.frame.origin.x =  center.x-30;
+  hourContainer.layer.layer.frame.origin.y = center.y-36;
   layer_add_child(&window.layer, &hourContainer.layer.layer);
 
 }
@@ -110,6 +114,8 @@ void handle_init() {
 	init = false;
 	window_init(&window,"Space Invader");
 	window_stack_push(&window, true /* Animated */);
+	
+  	window_set_background_color(&window, GColorBlack);
     
     resource_init_current_app(&APP_RESOURCES);
   	
