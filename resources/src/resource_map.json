@@ -1,69 +1,24 @@
 {
     "media": [
         {
+            "defName": "IMAGE_SHIP_SPRITE",
+            "type": "png",
+            "file": "images/ship.png"
+        },
+        {
+            "defName": "IMAGE_MIN_SPRITE",
+            "type": "png",
+            "file": "images/minSprite.png"
+        },
+        {
+            "defName": "IMAGE_SECOND_SPRITE",
+            "type": "png",
+            "file": "images/secondSprite.png"
+        },
+        {
             "defName": "IMAGE_MENU_ICON",
             "type": "png",
             "file": "images/menu_icon_space_invader.png"
-        },
-        {
-            "defName": "IMAGE_SHIP_12",
-            "type": "png",
-            "file": "images/ship12.png"
-        },
-        {
-            "defName": "IMAGE_SHIP_11",
-            "type": "png",
-            "file": "images/ship11.png"
-        },
-        {
-            "defName": "IMAGE_SHIP_10",
-            "type": "png",
-            "file": "images/ship10.png"
-        },
-        {
-            "defName": "IMAGE_SHIP_9",
-            "type": "png",
-            "file": "images/ship9.png"
-        },
-        {
-            "defName": "IMAGE_SHIP_8",
-            "type": "png",
-            "file": "images/ship8.png"
-        },
-        {
-            "defName": "IMAGE_SHIP_7",
-            "type": "png",
-            "file": "images/ship7.png"
-        },
-        {
-            "defName": "IMAGE_SHIP_6",
-            "type": "png",
-            "file": "images/ship6.png"
-        },
-        {
-            "defName": "IMAGE_SHIP_5",
-            "type": "png",
-            "file": "images/ship5.png"
-        },
-        {
-            "defName": "IMAGE_SHIP_4",
-            "type": "png",
-            "file": "images/ship4.png"
-        },
-        {
-            "defName": "IMAGE_SHIP_3",
-            "type": "png",
-            "file": "images/ship3.png"
-        },
-        {
-            "defName": "IMAGE_SHIP_2",
-            "type": "png",
-            "file": "images/ship2.png"
-        },
-        {
-            "defName": "IMAGE_SHIP_1",
-            "type": "png",
-            "file": "images/ship1.png"
         }
     ],
     "friendlyVersion": "VERSION",

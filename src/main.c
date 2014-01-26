@@ -2,7 +2,7 @@
 #include "pebble_app.h"
 
 #define MY_UUID {0x59, 0x1C, 0x11, 0x75, 0xC4, 0xC8, 0x35, 0xF7, 0x9F, 0x4B, 0xEA, 0x13, 0x25, 0x9D, 0x0A, 0x10}
-PBL_APP_INFO(MY_UUID, "Space Invader", "Work Hoodie", 0x1, 0x0, RESOURCE_ID_IMAGE_MENU_ICON, APP_INFO_WATCH_FACE);
+PBL_APP_INFO(MY_UUID, "Galaga Clock", "Work Hoodie", 0x1, 0x0, RESOURCE_ID_IMAGE_MENU_ICON, APP_INFO_WATCH_FACE);
 
 	
 Window window;
@@ -10,23 +10,66 @@ Window window;
 bool init;
 
 RotBmpContainer rotHourContainer;
+RotBmpContainer rotMinContainer;
+RotBmpContainer rotSecondContainter;
 
-//BmpContainer hourContainer;
-//BmpContainer secContainer;
+GPoint minOffset;
+GPoint secOffset;
 
-//BmpContainer image_containers
-#define NUMBER_OF_IMAGES 12
+void set_init_coords(RotBmpContainer *image, GPoint initCoords) {
+    GRect r = layer_get_frame(&image->layer.layer);
+    r.origin.x = initCoords.x + 144 / 2;
+    r.origin.y = -initCoords.y + 168 / 2;
+    layer_set_frame(&image->layer.layer, r);
+}
 
-// These images are 59 x 79 pixels,
-// black and white with the digit character centered in the image.
-const int IMAGE_RESOURCE_IDS[NUMBER_OF_IMAGES] = {
-  	RESOURCE_ID_IMAGE_SHIP_1, RESOURCE_ID_IMAGE_SHIP_2,
-  	RESOURCE_ID_IMAGE_SHIP_3, RESOURCE_ID_IMAGE_SHIP_4,
-	RESOURCE_ID_IMAGE_SHIP_5, RESOURCE_ID_IMAGE_SHIP_6,
-	RESOURCE_ID_IMAGE_SHIP_7, RESOURCE_ID_IMAGE_SHIP_8,
-  	RESOURCE_ID_IMAGE_SHIP_9,RESOURCE_ID_IMAGE_SHIP_10,
-	RESOURCE_ID_IMAGE_SHIP_11,RESOURCE_ID_IMAGE_SHIP_12
-};
+void set_angled_position_square(RotBmpContainer *image, double angle, GSize size, GPoint offset) {
+	
+    GPoint r;
+	double xAngle = angle;
+	double yAngle = angle;
+	if (((angle/TRIG_MAX_ANGLE)*360) < 45) //0-15 sec
+	{
+		xAngle=angle;
+		yAngle=TRIG_MAX_ANGLE * 0;
+			r= GPoint(((size.w-26) * sin_lookup(xAngle) / TRIG_MAX_RATIO) - offset.x,(size.h * cos_lookup(yAngle) / TRIG_MAX_RATIO) + offset.y);	
+	}
+	else
+	{
+		if (((angle/TRIG_MAX_ANGLE)*360)< 135) // 15-23 sec
+		{
+			xAngle=TRIG_MAX_ANGLE * 90 / 360;
+			yAngle=angle;
+			r= GPoint(((size.w-26) * sin_lookup(xAngle) / TRIG_MAX_RATIO) - offset.x,(size.h * cos_lookup(yAngle) / TRIG_MAX_RATIO) + offset.y);	
+		}
+		else
+		{
+			if (((angle/TRIG_MAX_ANGLE)*360)<225) //23-37 sec
+			{
+				xAngle=angle;
+				yAngle=TRIG_MAX_ANGLE * 180 / 360;
+				r= GPoint(((size.w-26) * sin_lookup(xAngle) / TRIG_MAX_RATIO) - offset.x,(size.h * cos_lookup(yAngle) / TRIG_MAX_RATIO) + offset.y);	
+			}	
+			else
+			{
+				if (((angle/TRIG_MAX_ANGLE)*360)<315) // 38 - 52 sec
+				{
+					xAngle=TRIG_MAX_ANGLE * 270 / 360;
+					yAngle=angle;
+					r= GPoint(((size.w-26) * sin_lookup(xAngle) / TRIG_MAX_RATIO) - offset.x,(size.h * cos_lookup(yAngle) / TRIG_MAX_RATIO) + offset.y);	
+				}
+				else //52-60 sec
+				{
+					xAngle=angle;
+					yAngle=TRIG_MAX_ANGLE * 0;
+					r= GPoint(((size.w-26) * sin_lookup(xAngle) / TRIG_MAX_RATIO) - offset.x,(size.h * cos_lookup(yAngle) / TRIG_MAX_RATIO) + offset.y);	
+				}
+			}
+		}
+	}
+				
+	set_init_coords(image, r);
+}
 
 void set_hand_angle(RotBmpContainer *hand_image_container, unsigned int hand_angle)
 {
@@ -60,124 +103,74 @@ void set_hand_angle(RotBmpContainer *hand_image_container, unsigned int hand_ang
   // (144 = screen width, 168 = screen height)
   hand_image_container->layer.layer.frame.origin.x = (144/2) - (hand_image_container->layer.layer.frame.size.w/2) + x_fudge;
   hand_image_container->layer.layer.frame.origin.y = (168/2) - (hand_image_container->layer.layer.frame.size.h/2) + y_fudge;
-
-  layer_mark_dirty(&hand_image_container->layer.layer);
 }
 
-unsigned short get_display_hour(unsigned short hour) {
-
-//  if (clock_is_24h_style()) {
-//    return hour;
-//  }
-
-  unsigned short display_hour = hour % 12;
-
-  // Converts "0" to "12"
-  return display_hour ? display_hour : 12;
-
-}
-
-void load_ship_image(int digit_value) {
-  /*
-
-     Loads the digit image from the application's resources and
-     displays it on-screen in the correct location.
-
-     Each slot is a quarter of the screen.
-
-   */
-
-  // TODO: Signal these error(s)?
-
-  GRect bounds = layer_get_bounds(window_get_root_layer(&window));
-  const GPoint center = grect_center_point(&bounds);
-	
-//  bmp_init_container(IMAGE_RESOURCE_IDS[digit_value - 1], &hourContainer);
-//  hourContainer.layer.layer.frame.origin.x =  center.x-30;
-//  hourContainer.layer.layer.frame.origin.y = center.y-36;
-//  layer_add_child(&window.layer, &hourContainer.layer.layer);
-	
-  rotbmp_init_container(IMAGE_RESOURCE_IDS[digit_value - 1],&rotHourContainer);
-//  rotHourContainer.layer.layer.frame.origin.x =  center.x - 30;
-//  rotHourContainer.layer.layer.frame.origin.y = center.y - 36;
-  layer_add_child(&window.layer, &rotHourContainer.layer.layer);	
-}
-
-
-void unload_ship_image() {
-  /*
-
-     Removes the digit from the display and unloads the image resource
-     to free up RAM.
-
-     Can handle being called on an already empty slot.
-
-   */
-	
-//    layer_remove_from_parent(&hourContainer.layer.layer);
-//    bmp_deinit_container(&hourContainer);
-	
-    layer_remove_from_parent(&rotHourContainer.layer.layer);
-    rotbmp_deinit_container(&rotHourContainer);
-
-}
-
-void update_ship_hour_hand(unsigned short value)
-{
-	if (init)
-	{
-    unload_ship_image();
-	}
-	  
-    load_ship_image(value);
-}
-
-void update_angle_min_hand(PblTm *tick_time)
-{
-	set_hand_angle(&rotHourContainer, ((tick_time->tm_hour % 12) * 30) + (tick_time->tm_min/2));
-}
-
-void display_time(PblTm *tick_time) {
-
-  // TODO: Use `units_changed` and more intelligence to reduce
-  //       redundant digit unload/load?
-
-  update_ship_hour_hand(get_display_hour(tick_time->tm_hour));
-  update_angle_min_hand(tick_time);
-  //display_value(tick_time->tm_min, 1, true);
+void update_hand_positions() {
+    PblTm t;
+    get_time(&t);
+    
+    int sec = t.tm_sec;
+    int min = t.tm_min;
+    int hour = t.tm_hour;
+    
+    int32_t aSec = TRIG_MAX_ANGLE * (sec * 6) /360;
+	GSize secSquare=GSize(84,72);
+	set_angled_position_square(&rotSecondContainter, aSec, secSquare, secOffset);
+    layer_mark_dirty(&rotSecondContainter.layer.layer);
+    
+   if (!init || sec % 10 == 0) {
+        int32_t aMin = TRIG_MAX_ANGLE * ((min * 6) + sec / 10) /360;
+		GSize minSquare=GSize(55,52);
+        set_angled_position_square(&rotMinContainer, aMin, minSquare, minOffset);
+        layer_mark_dirty(&rotMinContainer.layer.layer);
+    }
+    
+    if (!init || min % 5 == 0) {
+	//For hour angle
+		set_hand_angle(&rotHourContainer, ((hour % 12) * 30) + (min/2));
+		layer_mark_dirty(&rotHourContainer.layer.layer);
+    }
 }
 
 void handle_tick(AppContextRef params, PebbleTickEvent *t)
 {
-	 // Avoids a blank screen on watch start.
- 	PblTm tick_time;
-
-  	get_time(&tick_time);
-  	display_time(&tick_time);
+  	update_hand_positions();
 }
 
 void handle_init() {
 	init = false;
-	window_init(&window,"Space Invader");
+	window_init(&window,"Galaga Clock");
 	window_stack_push(&window, true /* Animated */);
-	
   	window_set_background_color(&window, GColorBlack);
     
     resource_init_current_app(&APP_RESOURCES);
+    
+    // Set up a layer for the minute hand
+    rotbmp_init_container(RESOURCE_ID_IMAGE_MIN_SPRITE, &rotMinContainer);
+    GSize minSize = layer_get_frame(&rotMinContainer.layer.layer).size;
+    minOffset = GPoint(minSize.w / 2, minSize.h / 2);
+    layer_add_child(&window.layer, &rotMinContainer.layer.layer);
 	
+    // Set up a layer for the second hand
+    rotbmp_init_container(RESOURCE_ID_IMAGE_SECOND_SPRITE, &rotSecondContainter);
+    GSize secSize = layer_get_frame(&rotSecondContainter.layer.layer).size;
+    secOffset = GPoint(secSize.w / 2, secSize.h / 2);
+    layer_add_child(&window.layer, &rotSecondContainter.layer.layer);
 	
-	
-	 // Avoids a blank screen on watch start.
- 	PblTm tick_time;
-
-  	get_time(&tick_time);
- 	display_time(&tick_time);
+	// Set up a layer for hour hand
+  	rotbmp_init_container(RESOURCE_ID_IMAGE_SHIP_SPRITE, &rotHourContainer);
+  	layer_add_child(&window.layer, &rotHourContainer.layer.layer);
+    
+	 // Avoids a blank screen on watch start. 	
+  	update_hand_positions();
 	
     init = true;    
 }
 
 void handle_deinit() {
-	unload_ship_image();
+	rotbmp_deinit_container(&rotHourContainer);
+	rotbmp_deinit_container(&rotMinContainer);
+	rotbmp_deinit_container(&rotSecondContainter);
 }
 
 void pbl_main(void *params) {
@@ -187,7 +180,7 @@ void pbl_main(void *params) {
 
     .tick_info = {
       .tick_handler = &handle_tick,
-      .tick_units = MINUTE_UNIT
+      .tick_units = SECOND_UNIT
     }
   };
 	  
