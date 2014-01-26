@@ -9,8 +9,10 @@ Window window;
 
 bool init;
 
-BmpContainer hourContainer;
-BmpContainer secContainer;
+RotBmpContainer rotHourContainer;
+
+//BmpContainer hourContainer;
+//BmpContainer secContainer;
 
 //BmpContainer image_containers
 #define NUMBER_OF_IMAGES 12
@@ -26,6 +28,41 @@ const int IMAGE_RESOURCE_IDS[NUMBER_OF_IMAGES] = {
 	RESOURCE_ID_IMAGE_SHIP_11,RESOURCE_ID_IMAGE_SHIP_12
 };
 
+void set_hand_angle(RotBmpContainer *hand_image_container, unsigned int hand_angle)
+{
+	
+  signed short x_fudge = 0;
+  signed short y_fudge = 0;
+
+
+  hand_image_container->layer.rotation =  TRIG_MAX_ANGLE * hand_angle / 360;
+
+  //
+  // Due to rounding/centre of rotation point/other issues of fitting
+  // square pixels into round holes by the time hands get to 6 and 9
+  // o'clock there's off-by-one pixel errors.
+  //
+  // The `x_fudge` and `y_fudge` values enable us to ensure the hands
+  // look centred on the minute marks at those points. (This could
+  // probably be improved for intermediate marks also but they're not
+  // as noticable.)
+  //
+  // I think ideally we'd only ever calculate the rotation between
+  // 0-90 degrees and then rotate again by 90 or 180 degrees to
+  // eliminate the error.
+  //
+  if (hand_angle == 180) {
+    x_fudge = -1;
+  } else if (hand_angle == 270) {
+    y_fudge = -1;
+  }
+
+  // (144 = screen width, 168 = screen height)
+  hand_image_container->layer.layer.frame.origin.x = (144/2) - (hand_image_container->layer.layer.frame.size.w/2) + x_fudge;
+  hand_image_container->layer.layer.frame.origin.y = (168/2) - (hand_image_container->layer.layer.frame.size.h/2) + y_fudge;
+
+  layer_mark_dirty(&hand_image_container->layer.layer);
+}
 
 unsigned short get_display_hour(unsigned short hour) {
 
@@ -52,15 +89,18 @@ void load_ship_image(int digit_value) {
 
   // TODO: Signal these error(s)?
 
-  Layer *window_layer = window_get_root_layer(&window);
-  GRect bounds = layer_get_bounds(window_layer);
+  GRect bounds = layer_get_bounds(window_get_root_layer(&window));
   const GPoint center = grect_center_point(&bounds);
 	
-  bmp_init_container(IMAGE_RESOURCE_IDS[digit_value-1], &hourContainer);
-  hourContainer.layer.layer.frame.origin.x =  center.x-30;
-  hourContainer.layer.layer.frame.origin.y = center.y-36;
-  layer_add_child(&window.layer, &hourContainer.layer.layer);
-
+//  bmp_init_container(IMAGE_RESOURCE_IDS[digit_value - 1], &hourContainer);
+//  hourContainer.layer.layer.frame.origin.x =  center.x-30;
+//  hourContainer.layer.layer.frame.origin.y = center.y-36;
+//  layer_add_child(&window.layer, &hourContainer.layer.layer);
+	
+  rotbmp_init_container(IMAGE_RESOURCE_IDS[digit_value - 1],&rotHourContainer);
+//  rotHourContainer.layer.layer.frame.origin.x =  center.x - 30;
+//  rotHourContainer.layer.layer.frame.origin.y = center.y - 36;
+  layer_add_child(&window.layer, &rotHourContainer.layer.layer);	
 }
 
 
@@ -73,23 +113,28 @@ void unload_ship_image() {
      Can handle being called on an already empty slot.
 
    */
-
-    layer_remove_from_parent(&hourContainer.layer.layer);
-    bmp_deinit_container(&hourContainer);
+	
+//    layer_remove_from_parent(&hourContainer.layer.layer);
+//    bmp_deinit_container(&hourContainer);
+	
+    layer_remove_from_parent(&rotHourContainer.layer.layer);
+    rotbmp_deinit_container(&rotHourContainer);
 
 }
 
 void update_ship_hour_hand(unsigned short value)
 {
-//	value = value % 100; // Maximum of two digits per row.
 	if (init)
 	{
     unload_ship_image();
 	}
 	  
     load_ship_image(value);
-    
-//    value = value / 10;
+}
+
+void update_angle_min_hand(PblTm *tick_time)
+{
+	set_hand_angle(&rotHourContainer, ((tick_time->tm_hour % 12) * 30) + (tick_time->tm_min/2));
 }
 
 void display_time(PblTm *tick_time) {
@@ -98,6 +143,7 @@ void display_time(PblTm *tick_time) {
   //       redundant digit unload/load?
 
   update_ship_hour_hand(get_display_hour(tick_time->tm_hour));
+  update_angle_min_hand(tick_time);
   //display_value(tick_time->tm_min, 1, true);
 }
 
@@ -107,7 +153,7 @@ void handle_tick(AppContextRef params, PebbleTickEvent *t)
  	PblTm tick_time;
 
   	get_time(&tick_time);
-//  	display_time(&tick_time);
+  	display_time(&tick_time);
 }
 
 void handle_init() {
@@ -118,12 +164,15 @@ void handle_init() {
   	window_set_background_color(&window, GColorBlack);
     
     resource_init_current_app(&APP_RESOURCES);
-  	
+	
+	
+	
 	 // Avoids a blank screen on watch start.
  	PblTm tick_time;
 
   	get_time(&tick_time);
  	display_time(&tick_time);
+	
     init = true;    
 }
 
