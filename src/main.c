@@ -8,11 +8,14 @@ PBL_APP_INFO(MY_UUID, "Galaga Clock", "Work Hoodie", 0x1, 0x0, RESOURCE_ID_IMAGE
 Window window;
 
 bool init;
+bool inverted;
 
 RotBmpContainer rotHourContainer;
 RotBmpContainer rotMinContainer;
 RotBmpContainer rotSecondContainter;
 BmpContainer backgroundContainer;
+
+InverterLayer shotAt_tweleve;
 
 GPoint minOffset;
 GPoint secOffset;
@@ -29,46 +32,78 @@ void set_angled_position_square(RotBmpContainer *image, double angle, GSize size
     GPoint r;
 	double xAngle = angle;
 	double yAngle = angle;
-	if (((angle/TRIG_MAX_ANGLE)*360) < 45) //0-15 sec
+	if (((angle/TRIG_MAX_ANGLE)*360) < 40) //0-6 sec
 	{
 		xAngle=angle;
 		yAngle=TRIG_MAX_ANGLE * 0;
-			r= GPoint(((size.w-26) * sin_lookup(xAngle) / TRIG_MAX_RATIO) - offset.x,(size.h * cos_lookup(yAngle) / TRIG_MAX_RATIO) + offset.y);	
 	}
 	else
 	{
-		if (((angle/TRIG_MAX_ANGLE)*360)< 135) // 15-23 sec
+		if (((angle/TRIG_MAX_ANGLE)*360) < 50)//7-8
 		{
 			xAngle=TRIG_MAX_ANGLE * 90 / 360;
-			yAngle=angle;
-			r= GPoint(((size.w-26) * sin_lookup(xAngle) / TRIG_MAX_RATIO) - offset.x,(size.h * cos_lookup(yAngle) / TRIG_MAX_RATIO) + offset.y);	
+			yAngle=TRIG_MAX_ANGLE * 0;
 		}
 		else
 		{
-			if (((angle/TRIG_MAX_ANGLE)*360)<225) //23-37 sec
+			if (((angle/TRIG_MAX_ANGLE)*360)< 127) // 9-21 sec
 			{
-				xAngle=angle;
-				yAngle=TRIG_MAX_ANGLE * 180 / 360;
-				r= GPoint(((size.w-26) * sin_lookup(xAngle) / TRIG_MAX_RATIO) - offset.x,(size.h * cos_lookup(yAngle) / TRIG_MAX_RATIO) + offset.y);	
-			}	
+				xAngle=TRIG_MAX_ANGLE * 90 / 360;
+				yAngle=angle;
+			}
 			else
 			{
-				if (((angle/TRIG_MAX_ANGLE)*360)<315) // 38 - 52 sec
+				
+				if (((angle/TRIG_MAX_ANGLE)*360)<140) //22-23 sec
 				{
-					xAngle=TRIG_MAX_ANGLE * 270 / 360;
-					yAngle=angle;
-					r= GPoint(((size.w-26) * sin_lookup(xAngle) / TRIG_MAX_RATIO) - offset.x,(size.h * cos_lookup(yAngle) / TRIG_MAX_RATIO) + offset.y);	
+					xAngle=TRIG_MAX_ANGLE * 90 / 360;
+					yAngle=TRIG_MAX_ANGLE * 180 / 360;
 				}
-				else //52-60 sec
+				else
 				{
-					xAngle=angle;
-					yAngle=TRIG_MAX_ANGLE * 0;
-					r= GPoint(((size.w-26) * sin_lookup(xAngle) / TRIG_MAX_RATIO) - offset.x,(size.h * cos_lookup(yAngle) / TRIG_MAX_RATIO) + offset.y);	
+					if (((angle/TRIG_MAX_ANGLE)*360)<220) //23-37 sec
+					{
+						xAngle=angle;
+						yAngle=TRIG_MAX_ANGLE * 180 / 360;
+    				}	
+					else
+					{
+						if (((angle/TRIG_MAX_ANGLE)*360)<230) // 38 - 39 sec
+						{
+							xAngle=TRIG_MAX_ANGLE * 270 / 360;
+							yAngle=TRIG_MAX_ANGLE * 180 / 360;
+						}
+						else
+						{
+							if (((angle/TRIG_MAX_ANGLE)*360)<306) // 40 - 51 sec
+							{
+								xAngle=TRIG_MAX_ANGLE * 270 / 360;
+								yAngle=angle;
+					   		}
+							else
+							{
+								if (((angle/TRIG_MAX_ANGLE)*360)<315) //52-53
+								{
+									xAngle=TRIG_MAX_ANGLE * 270 / 360;
+									yAngle=TRIG_MAX_ANGLE * 0;
+								}
+								else //54-60 sec
+								{
+									xAngle=angle;
+									yAngle=TRIG_MAX_ANGLE * 0;
+							    }
+							}
+							
+						}
+						
+					}
 				}
+				
 			}
 		}
 	}
-				
+	
+	r= GPoint(((size.w-26) * sin_lookup(xAngle) / TRIG_MAX_RATIO) - offset.x,(size.h * cos_lookup(yAngle) / TRIG_MAX_RATIO) + offset.y);			
 	set_init_coords(image, r);
 }
 
@@ -136,6 +171,26 @@ void update_hand_positions() {
 void handle_tick(AppContextRef params, PebbleTickEvent *t)
 {
   	update_hand_positions();
+	PblTm tm;
+	get_time(&tm);
+	if (tm.tm_hour == 12 || tm.tm_hour==24)
+	{
+		if ((tm.tm_sec < 1)||(tm.tm_sec>59))
+		{
+			inverted = true;
+        	layer_add_child(&window.layer, &shotAt_tweleve.layer);
+		}
+		else
+		{
+			if (inverted)
+			{
+				layer_remove_from_parent(&shotAt_tweleve.layer);
+				inverted = false;
+			}
+		}
+		
+	}
+	
 }
 
 void handle_init() {
@@ -145,7 +200,7 @@ void handle_init() {
   	//window_set_background_color(&window, GColorBlack);
     
     resource_init_current_app(&APP_RESOURCES);
-    
+    // Set up a layer for the background
 	bmp_init_container(RESOURCE_ID_IMAGE_BACKGROUND, &backgroundContainer);
 	layer_add_child(&window.layer, &backgroundContainer.layer.layer);
 	
@@ -164,8 +219,12 @@ void handle_init() {
 	// Set up a layer for hour hand
   	rotbmp_init_container(RESOURCE_ID_IMAGE_SHIP_SPRITE, &rotHourContainer);
   	layer_add_child(&window.layer, &rotHourContainer.layer.layer);
-    
-	 // Avoids a blank screen on watch start. 	
+
+	
+	
+	inverter_layer_init(&shotAt_tweleve, GRect(72,13,4,64));
+	
+	// Avoids a blank screen on watch start. 	
   	update_hand_positions();
 	
     init = true;    
