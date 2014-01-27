@@ -12,6 +12,7 @@ bool init;
 RotBmpContainer rotHourContainer;
 RotBmpContainer rotMinContainer;
 RotBmpContainer rotSecondContainter;
+BmpContainer backgroundContainer;
 
 GPoint minOffset;
 GPoint secOffset;
@@ -120,7 +121,7 @@ void update_hand_positions() {
     
    if (!init || sec % 10 == 0) {
         int32_t aMin = TRIG_MAX_ANGLE * ((min * 6) + sec / 10) /360;
-		GSize minSquare=GSize(55,52);
+		GSize minSquare=GSize(55,45);
         set_angled_position_square(&rotMinContainer, aMin, minSquare, minOffset);
         layer_mark_dirty(&rotMinContainer.layer.layer);
     }
@@ -141,10 +142,13 @@ void handle_init() {
 	init = false;
 	window_init(&window,"Galaga Clock");
 	window_stack_push(&window, true /* Animated */);
-  	window_set_background_color(&window, GColorBlack);
+  	//window_set_background_color(&window, GColorBlack);
     
     resource_init_current_app(&APP_RESOURCES);
     
+	bmp_init_container(RESOURCE_ID_IMAGE_BACKGROUND, &backgroundContainer);
+	layer_add_child(&window.layer, &backgroundContainer.layer.layer);
+	
     // Set up a layer for the minute hand
     rotbmp_init_container(RESOURCE_ID_IMAGE_MIN_SPRITE, &rotMinContainer);
     GSize minSize = layer_get_frame(&rotMinContainer.layer.layer).size;
@@ -171,6 +175,7 @@ void handle_deinit() {
 	rotbmp_deinit_container(&rotHourContainer);
 	rotbmp_deinit_container(&rotMinContainer);
 	rotbmp_deinit_container(&rotSecondContainter);
+	bmp_deinit_container(&backgroundContainer);
 }
 
 void pbl_main(void *params) {

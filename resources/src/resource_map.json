@@ -1,6 +1,11 @@
 {
     "media": [
         {
+            "defName": "IMAGE_BACKGROUND",
+            "type": "png",
+            "file": "images/background.png"
+        },
+        {
             "defName": "IMAGE_SHIP_SPRITE",
             "type": "png",
             "file": "images/ship.png"
